@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo/src/model/todo_model.dart';
 import 'package:todo/src/widgets/todo_item.dart';
+
+import '../model/sharedprif.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,22 +15,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
-  static const String KEY = "TODOitemvalu";
-
-  final todolist = ToDo.todoList();
+  List<ToDo> todolist = [];
   final _todoAddController = TextEditingController();
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    CheckTodoItems();
+    _loadToDoList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white70,
+      backgroundColor: Colors.white,
       // appBar: buildAppBar(),
       body: SafeArea(
         child: Stack(
@@ -47,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.bold, fontSize: 20),
                         ),
                       ),
-                      for (ToDo todoo in todolist)
+                      for (ToDo todoo in todolist.reversed)
                         TodoItem(
                           toDo: todoo,
                           onTodochange: _todoChange,
@@ -64,14 +66,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                       child: Container(
-                    margin: EdgeInsets.only(bottom: 15,left: 10,right: 5),
+                    margin: EdgeInsets.only(bottom: 15, left: 10, right: 5),
                     decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Color.fromRGBO(100, 149, 237, 100),
                         borderRadius: BorderRadius.circular(15)),
                     child: TextField(
                       controller: _todoAddController,
                       decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10,),
+                          contentPadding: EdgeInsets.only(
+                            left: 20,
+                          ),
                           prefixIconConstraints:
                               BoxConstraints(maxHeight: 20, minWidth: 25),
                           border: InputBorder.none,
@@ -79,10 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   )),
                   Container(
-                      margin: EdgeInsets.only(bottom: 15,right:10),
-
+                      margin: EdgeInsets.only(bottom: 15, right: 10),
                       decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: Color.fromRGBO(0, 150, 255, 100),
                           borderRadius: BorderRadius.circular(15)),
                       child: ElevatedButton(
                         child: Icon(
@@ -90,14 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.black,
                           size: 25,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           print("Add button click");
                           _addTodoItem(_todoAddController.text.toString());
-
-
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue, elevation: 0),
+                            backgroundColor: Color.fromRGBO(100, 149, 237, 0),
+                            elevation: 0),
                       ))
                 ],
               ),
@@ -114,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .add(ToDo(id: DateTime.now().microsecond.toString(), todotext: todo));
     });
     _todoAddController.clear();
+    _saveToDoList();
   }
 
   void _todoChange(ToDo toDo) {
@@ -126,19 +129,20 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       todolist.removeWhere((element) => element.id == id);
     });
+    _saveToDoList();
   }
 
   Widget searchBox() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(15)),
+          color: Color.fromRGBO(100, 149, 237, 100),
+          borderRadius: BorderRadius.circular(15)),
       child: TextField(
         decoration: InputDecoration(
-            contentPadding: EdgeInsets.all(2),
             prefixIcon: Icon(
               Icons.search,
-              color: Colors.blue,
+              color: Colors.black87,
               size: 20,
             ),
             prefixIconConstraints: BoxConstraints(maxHeight: 20, minWidth: 25),
@@ -162,17 +166,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _loadToDoList() async {
+    List<ToDo> todos = await loadToDoList();
+    setState(() {
+      todolist = todos;
+    });
+  }
 
-
-
-
-
+  Future<void> _saveToDoList() async {
+    List<String> encodedList =
+        todolist.map((todo) => jsonEncode(todo.toJson())).toList();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('todoList', encodedList);
+  }
 }
-
-// void CheckTodoItems() async{
-//
-//   var sharedpref =await SharedPreferences.getInstance();
-//
-//   sharedpref.g
-//
-// }
